@@ -37,19 +37,7 @@ import numpy as np
 from sklearn import preprocessing
 import pandas as pd
 
-#os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
-
-# if tf.test.gpu_device_name():
-#   print('GPU found')
-# else:
-#   print("No GPU found")
-
 siamese_net = keras.models.load_model(r"C:\Users\DELL\PycharmProjects\inkuisitor\clerk\model_34")
-
-
-# class ApprovalsView(viewsets.ModelViewSet):
-#	queryset = client.objects.all()
-#	serializer_class = clientSerializer
 
 @api_view(['GET', ])
 def clientdetails_view(request):
@@ -62,27 +50,50 @@ def clientdetails_view(request):
 @api_view(['POST', ])
 def verify_view(request):
     average=0
+    clientname=""
     if request.method == 'POST':
-        print("done1")
-        print(request.data['clientName'])
+        option = request.data['option']
+
+        if option == "Base64":
+            BverifiedImg = request.data['BverifiedImg'].replace("data:image/png;base64,", "")
+            clientname = request.data['clientName']
+            path_client_name_image = r"C:/Users/DELL/Desktop/" + clientname + ".png"
+            with open(path_client_name_image, "wb") as f:
+                f.write(a2b_base64(BverifiedImg))
+
         serializer = clientSerializer(data=request.data)
         data = {}
 
         if serializer.is_valid():
-            x = client.objects.filter(clientName=serializer.validated_data['clientName'])
+            clientName = client.objects.filter(clientName=serializer.validated_data['clientName'])
             img1 = ""
             img2 = ""
             img3 = ""
-            verifiedimg = serializer.validated_data['verifiedImg']
-            for i, item in enumerate(x):
-                img1 = item.img1
-                img2 = item.img2
-                img3 = item.img3
-            print(serializer.validated_data['clientName'])
-            print("done2")
-            print(verifiedimg)
-            print(img1)
-            print(img2)
+            verifiedimg = ""
+            if option == "Image":
+                verifiedimg = serializer.validated_data['verifiedImg']
+                for i, item in enumerate(clientName):
+                    if item.Bimg1 == None:
+                        img1 = item.img1
+                        img2 = item.img2
+                        img3 = item.img3
+                    else:
+                        img1 = item.Bimg1
+                        img2 = item.Bimg2
+                        img3 = item.Bimg3
+
+            else:
+                verifiedimg = clientname + ".png"
+                for i, item in enumerate(clientName):
+                    if item.Bimg1 == None:
+                        img1 = item.img1
+                        img2 = item.img2
+                        img3 = item.img3
+                    else:
+                        img1 = item.Bimg1
+                        img2 = item.Bimg2
+                        img3 = item.Bimg3
+
 
             images = []
             images += [str(img1), str(img2), str(img3)]
@@ -157,22 +168,42 @@ def verify_view(request):
 @api_view(['POST', ])
 def createprofile_view(request):
     if request.method == 'POST':
-
         data = {}
+        option=request.data['option']
+        if option == "Image":
+            serializer = clientSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+            else:
+                data = serializer.errors
 
-        """"
-        img1 = request.data['img1'].replace("data:image/png;base64,", "")
-        clientname = request.data['clientName']
-        path_client_name_image_1 = r"C:/Users/DELL/PycharmProjects/inkuisitor/media/imgs/" + clientname + "_1.png"
-        with open(path_client_name_image_1, "wb") as f:
-            f.write(a2b_base64(img1))
-            """
-
-        #request.data['img1'] = r"C:/Users/DELL/Desktop/" + request.data['clientName'] + "_1.png"
-        serializer = clientSerializer(data=request.data)
-        if serializer.is_valid():
-            print(serializer.validated_data['clientName'])
-            serializer.save()
         else:
-            data = serializer.errors
+
+            Bimg1 = request.data['Bimg1'].replace("data:image/png;base64,", "")
+            clientname = request.data['clientName']
+            path_client_name_image_1 = r"C:/Users/DELL/PycharmProjects/inkuisitor/media/imgs/" + clientname + "_1.png"
+            with open(path_client_name_image_1, "wb") as f:
+                f.write(a2b_base64(Bimg1))
+
+            Bimg2 = request.data['Bimg2'].replace("data:image/png;base64,", "")
+            clientname = request.data['clientName']
+            path_client_name_image_2 = r"C:/Users/DELL/PycharmProjects/inkuisitor/media/imgs/" + clientname + "_2.png"
+            with open(path_client_name_image_2, "wb") as f:
+                f.write(a2b_base64(Bimg2))
+
+            Bimg3 = request.data['Bimg3'].replace("data:image/png;base64,", "")
+            clientname = request.data['clientName']
+            path_client_name_image_3 = r"C:/Users/DELL/PycharmProjects/inkuisitor/media/imgs/" + clientname + "_3.png"
+            with open(path_client_name_image_3, "wb") as f:
+                f.write(a2b_base64(Bimg3))
+
+            serializer = clientSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.validated_data['Bimg1'] = r"imgs/" + clientname + "_1.png"
+                serializer.validated_data['Bimg2'] = r"imgs/" + clientname + "_2.png"
+                serializer.validated_data['Bimg3'] = r"imgs/" + clientname + "_3.png"
+                serializer.save()
+            else:
+                data = serializer.errors
+
         return Response(data)
